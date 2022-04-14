@@ -26,6 +26,7 @@ import (
     "log"
     "math/rand"
     "time"
+    "github.com/ae-chunker-go"
 )
 
 func main() {
@@ -35,7 +36,11 @@ func main() {
         log.Fatal(err)
     }
 
-    chunks, err := Split(data, 256*1024) // chunk to have an average size of 256 KiB
+    chunker := ae.NewChunker(data, &ae.Options{
+    	AverageSize: 256*1024,  // 256 KiB
+    	MaxSize: 512*1024,      // 512 KiB
+    })
+    chunks, err := chunker.Split()
     if err != nil {
         log.Fatal(err)
     }
