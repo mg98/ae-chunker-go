@@ -8,6 +8,7 @@ import (
 
 // Extremum defines if the algorithm should look for local minima or maxima.
 type Extremum uint8
+
 const (
 	// MAX defines the option for local maxima (cf. AE_MAX).
 	MAX Extremum = iota

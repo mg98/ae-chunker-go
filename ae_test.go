@@ -25,10 +25,11 @@ var testFile = randBytes(int64(100 * units.Mebibyte))
 func TestSplit(t *testing.T) {
 	t.Run("sum of chunks is equal original file", func(t *testing.T) {
 		const avgSize = 361 * 1024
+		var c *Chunker
 		var chunks [][]byte
 
 		t.Run("run with AE_MAX", func(t *testing.T) {
-			c := NewChunker(testFile, &Options{AverageSize: avgSize, Mode: MAX})
+			c = NewChunker(testFile, &Options{AverageSize: avgSize, Mode: MAX})
 			chunks, _ = c.Split()
 			var data []byte
 			for _, chunk := range chunks {
@@ -37,7 +38,7 @@ func TestSplit(t *testing.T) {
 			assert.Equal(t, testFile, data)
 		})
 		t.Run("run with AE_MN", func(t *testing.T) {
-			c := NewChunker(testFile, &Options{AverageSize: avgSize, Mode: MIN})
+			c = NewChunker(testFile, &Options{AverageSize: avgSize, Mode: MIN})
 			chunks, _ = c.Split()
 			var data []byte
 			for _, chunk := range chunks {
@@ -47,15 +48,14 @@ func TestSplit(t *testing.T) {
 		})
 
 		t.Run("minimum chunk size", func(t *testing.T) {
-			windowSize := int(math.Round(avgSize / (math.E - 1)))
 			for _, chunk := range chunks[:len(chunks)-1] {
-				assert.GreaterOrEqual(t, len(chunk), windowSize+1)
+				assert.GreaterOrEqual(t, len(chunk), c.MinSize())
 			}
 		})
 	})
 
 	t.Run("zero byte input", func(t *testing.T) {
-		c := NewChunker([]byte{}, &Options{AverageSize: 256*1024+123})
+		c := NewChunker([]byte{}, &Options{AverageSize: 256*1024 + 123})
 		chunks, _ := c.Split()
 		assert.Equal(t, 0, len(chunks))
 	})
@@ -63,7 +63,7 @@ func TestSplit(t *testing.T) {
 	t.Run("one to four byte input", func(t *testing.T) {
 		var i int64
 		for i = 1; i < 5; i++ {
-			c := NewChunker(randBytes(i), &Options{AverageSize: 256*1024})
+			c := NewChunker(randBytes(i), &Options{AverageSize: 256 * 1024})
 			chunks, _ := c.Split()
 			assert.Equal(t, 1, len(chunks))
 		}
@@ -118,22 +118,22 @@ func TestSplit(t *testing.T) {
 
 func BenchmarkSplit(b *testing.B) {
 	b.Run("window size of 256KiB", func(b *testing.B) {
-		c := NewChunker(testFile, &Options{AverageSize: 256*1024})
+		c := NewChunker(testFile, &Options{AverageSize: 256 * 1024})
 		_, _ = c.Split()
 		b.SetBytes(int64(len(testFile)))
 	})
 	b.Run("window size of 512KiB", func(b *testing.B) {
-		c := NewChunker(testFile, &Options{AverageSize: 512*1024})
+		c := NewChunker(testFile, &Options{AverageSize: 512 * 1024})
 		_, _ = c.Split()
 		b.SetBytes(int64(len(testFile)))
 	})
 	b.Run("window size of 1MiB", func(b *testing.B) {
-		c := NewChunker(testFile, &Options{AverageSize: 1024*1024})
+		c := NewChunker(testFile, &Options{AverageSize: 1024 * 1024})
 		_, _ = c.Split()
 		b.SetBytes(int64(len(testFile)))
 	})
 	b.Run("window size of 10MiB", func(b *testing.B) {
-		c := NewChunker(testFile, &Options{AverageSize: 10*1024*1024})
+		c := NewChunker(testFile, &Options{AverageSize: 10 * 1024 * 1024})
 		_, _ = c.Split()
 		b.SetBytes(int64(len(testFile)))
 	})
