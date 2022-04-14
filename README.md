@@ -3,7 +3,7 @@
 [![GoDoc](http://img.shields.io/badge/godoc-reference-blue.svg)](https://pkg.go.dev/github.com/mg98/ae-chunker-go)
 [![Test](https://github.com/mg98/ae-chunker-go/actions/workflows/test.yml/badge.svg)](https://github.com/mg98/ae-chunker-go/actions/workflows/test.yml)
 [![codecov](https://codecov.io/gh/mg98/ae-chunker-go/branch/main/graph/badge.svg?token=R3OYXX1HC7)](https://codecov.io/gh/mg98/ae-chunker-go)
-[![Go Report Card](https://goreportcard.com/badge/github.com/mg98/ae-chunker-go)](https://goreportcard.com/report/github.com/mg98/ae-chunker-go)
+[![Go Report Card](https://goreportcard.com/badge/github.com/mg98/ae-chunker-go?)](https://goreportcard.com/report/github.com/mg98/ae-chunker-go)
 ![License](https://img.shields.io/github/license/mg98/ae-chunker-go)
 
 **ae-chunker-go** is a best-effort Go implementation of the chunking algorithm presented in
