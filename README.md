@@ -22,7 +22,9 @@ go get -u github.com/mg98/ae-chunker-go
 
 ```go
 import (
+    "bytes"
     "fmt"
+    "io"
     "log"
     "math/rand"
     "time"
@@ -36,14 +38,21 @@ func main() {
         log.Fatal(err)
     }
 
-    chunker := ae.NewChunker(data, &ae.Options{
+    chunker := ae.NewChunker(bytes.NewReader(data), &ae.Options{
     	AverageSize: 256*1024,  // 256 KiB
     	MaxSize: 512*1024,      // 512 KiB
     })
-    chunks, err := chunker.Split()
-    if err != nil {
-        log.Fatal(err)
+    var chunks [][]byte
+    for {
+    	chunk, err := chunker.NextBytes()
+    	if err == io.EOF {
+    		break
+        } else if err != nil {
+        	log.Fatal(err)
+        }
+        chunks = append(chunks, chunk)
     }
+    
     fmt.Printf(
         "Data divided into %d chunks. First chunk is %d bytes.\n",
         len(chunks),
@@ -61,7 +70,7 @@ The task was to divide 100 MiB of random bytes into chunks with an average size 
 (CPU: _Intel(R) Core(TM) i7-8750H CPU @ 2.20GHz_).
 
 | Chunking Algorithm           | Speed         |
-|------------------------------|---------------|
+|------------------------------|--------------:|
 | ae-chunker-go                | 0.08159 ns/op |
 | [fastcdc-go](https://github.com/jotfs/fastcdc-go)                   | 0.09423 ns/op |
 | [go-ipfs-chunker](https://github.com/ipfs/go-ipfs-chunker) (Rabin)      | 0.43320 ns/op  |
@@ -76,4 +85,4 @@ The algorithm was run with the options
 `&ae.Options{AverageSize: 256*1024}` and `&ae.Options{AverageSize: 256*1024, MaxSize: 512*1024}`,
 respectively.
 
-<img src="./img/csd256kib.png" width="50%"><img src="./img/csd256kib512kib.png" width="50%">
+<img src="./img/csd256kib.png" width="50%"> <img src="./img/csd256kib512kib.png" width="50%">

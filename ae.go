@@ -2,8 +2,9 @@
 package ae
 
 import (
-	"errors"
+	"io"
 	"math"
+	"math/big"
 )
 
 // Extremum defines if the algorithm should look for local minima or maxima.
@@ -19,8 +20,8 @@ const (
 
 // Chunker implements the AE chunking algorithm and holds the parameters for its execution.
 type Chunker struct {
-	// Data to be chunked.
-	Data []byte
+	// Reader for data to be chunked.
+	Reader io.Reader
 
 	// AverageSize of a chunk in bytes as is desired.
 	AverageSize int
@@ -45,39 +46,52 @@ type Options struct {
 }
 
 // NewChunker initializes and configures a new chunker.
-func NewChunker(data []byte, opts *Options) *Chunker {
+func NewChunker(reader io.Reader, opts *Options) *Chunker {
 	return &Chunker{
-		Data:        data,
+		Reader:      reader,
 		Extremum:    opts.Mode,
 		AverageSize: opts.AverageSize,
 		MaxSize:     opts.MaxSize,
 	}
 }
 
-// Split returns the slice of chunks for a given data.
-func (c *Chunker) Split() ([][]byte, error) {
-	if len(c.Data) == 0 {
-		return [][]byte{}, nil
-	} else if len(c.Data) < 3 {
-		return [][]byte{c.Data}, nil
-	}
-	if c.AverageSize < 3 {
-		return nil, errors.New("AverageSize must not be less than 3")
-	}
-	if c.MaxSize > 0 && c.MaxSize < c.AverageSize {
-		return nil, errors.New("MaxSize must not be less than AverageSize")
+// NextBytes returns the next chunk of bytes or the error io.EOF if there is none.
+// Call this function in a for loop to attain all chunks of a data stream.
+func (c *Chunker) NextBytes() ([]byte, error) {
+	// first `width` bytes become initial extreme value
+	extremePos := c.getWidth()
+	extremeValue := make([]byte, c.getWidth())
+	if _, err := c.Reader.Read(extremeValue); err != nil {
+		return nil, err
 	}
 
-	var chunks [][]byte
-	var cut int
+	// init new chunk
+	bytes := extremeValue
 
-	for cut < len(c.Data) {
-		prevCut := cut
-		cut += c.nextCutPoint(c.Data[cut:])
-		chunks = append(chunks, c.Data[prevCut:cut])
+	for i := extremePos + c.getWidth(); true; i += c.getWidth() {
+		curBytes := make([]byte, c.getWidth())
+		n, err := c.Reader.Read(curBytes)
+		if err != nil {
+			if err == io.EOF {
+				break
+			}
+			return nil, err
+		}
+
+		bytes = append(bytes, curBytes[:n]...)
+
+		if c.MaxSize > 0 && i >= c.MaxSize {
+			break
+		}
+		if c.isExtreme(curBytes, extremeValue) {
+			extremePos = i
+			extremeValue = curBytes
+		} else if i >= extremePos+c.getWindowSize() {
+			break
+		}
 	}
 
-	return chunks, nil
+	return bytes, nil
 }
 
 // MinSize returns the theoretical minimum size a chunk can have.
@@ -117,29 +131,13 @@ func (c *Chunker) sumBytes(data []byte, pos int) int {
 
 // isExtreme returns if the position pos in input is extreme
 // (in the sense of the Chunker's Extremum setting) compared to the current maxPos.
-func (c *Chunker) isExtreme(input []byte, pos int, maxPos int) bool {
-	a := c.sumBytes(input, pos)
-	b := c.sumBytes(input, maxPos)
+func (c *Chunker) isExtreme(cur []byte, prev []byte) bool {
+	curVal := big.NewInt(0).SetBytes(cur).Uint64()
+	prevVal := big.NewInt(0).SetBytes(prev).Uint64()
 
 	if c.Extremum == MAX {
-		return a > b
+		return curVal > prevVal
 	} else {
-		return a < b
+		return curVal < prevVal
 	}
-}
-
-// nextCutPoint returns the index in the input that determines the next chunk boundary.
-func (c *Chunker) nextCutPoint(input []byte) int {
-	maxPos := c.getWidth()
-	for i := maxPos + c.getWidth(); i < len(input); i += c.getWidth() {
-		if c.MaxSize > 0 && i >= c.MaxSize {
-			return i
-		}
-		if c.isExtreme(input, i, maxPos) {
-			maxPos = i
-		} else if i >= maxPos+c.getWindowSize() {
-			return i
-		}
-	}
-	return len(input)
 }
