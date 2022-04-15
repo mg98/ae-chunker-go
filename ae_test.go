@@ -37,6 +37,7 @@ func TestSplit(t *testing.T) {
 			}
 			assert.Equal(t, testFile, data)
 		})
+
 		t.Run("run with AE_MN", func(t *testing.T) {
 			c = NewChunker(testFile, &Options{AverageSize: avgSize, Mode: MIN})
 			chunks, _ = c.Split()

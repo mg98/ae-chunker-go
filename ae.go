@@ -62,7 +62,7 @@ func (c *Chunker) Split() ([][]byte, error) {
 		return [][]byte{c.Data}, nil
 	}
 	if c.AverageSize < 3 {
-		return nil, errors.New("AvgSize must not be less than 3")
+		return nil, errors.New("AverageSize must not be less than 3")
 	}
 	if c.MaxSize > 0 && c.MaxSize < c.AverageSize {
 		return nil, errors.New("MaxSize must not be less than AverageSize")

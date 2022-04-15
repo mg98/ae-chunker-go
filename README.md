@@ -68,3 +68,12 @@ The task was to divide 100 MiB of random bytes into chunks with an average size 
 | [go-ipfs-chunker](https://github.com/ipfs/go-ipfs-chunker) (Buzhash)    | 0.08248 ns/op |
 | [go-ipfs-chunker](https://github.com/ipfs/go-ipfs-chunker) (Fixed Size) | 0.01966 ns/op |
 
+
+## Chunk Size Variance
+
+The following plots show the chunk size distribution on a set of random bytes of 1 GiB.
+The algorithm was run with the options 
+`&ae.Options{AverageSize: 256*1024}` and `&ae.Options{AverageSize: 256*1024, MaxSize: 512*1024}`,
+respectively.
+
+![Chunk Size Distribution (Avg Size: 256 KiB)](./img/csd256kib.png) ![Chunk Size Distribution (Avg Size: 256 KiB, Max Size: 512 KiB)](./img/csd256kib512kib.png)
