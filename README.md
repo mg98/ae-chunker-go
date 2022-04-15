@@ -76,4 +76,4 @@ The algorithm was run with the options
 `&ae.Options{AverageSize: 256*1024}` and `&ae.Options{AverageSize: 256*1024, MaxSize: 512*1024}`,
 respectively.
 
-![Chunk Size Distribution (Avg Size: 256 KiB)](./img/csd256kib.png) ![Chunk Size Distribution (Avg Size: 256 KiB, Max Size: 512 KiB)](./img/csd256kib512kib.png)
+<img src="./img/csd256kib.png" width="50%"><img src="./img/csd256kib512kib.png" width="50%">
