@@ -83,4 +83,4 @@ The algorithm was run with the options
 `&ae.Options{AverageSize: 256*1024}` and `&ae.Options{AverageSize: 256*1024, MaxSize: 512*1024}`,
 respectively.
 
-<img src="./img/csd256kib.png" width="50%"> <img src="./img/csd256kib512kib.png" width="50%">
+<img src="./img/csd256kib.png" width="49%"> <img src="./img/csd256kib512kib.png" width="49%">
