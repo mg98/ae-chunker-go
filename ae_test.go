@@ -160,3 +160,9 @@ func BenchmarkSplit(b *testing.B) {
 		b.ReportAllocs()
 	})
 }
+
+func TestSumBytes(t *testing.T) {
+	assert.Equal(t, 424, sumBytes([]byte{100,0,20,44,60,200}))
+	assert.Equal(t, 1, sumBytes([]byte{1}))
+	assert.Equal(t, 0, sumBytes([]byte{}))
+}
