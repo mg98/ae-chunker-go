@@ -38,7 +38,7 @@ func getChunks(c *Chunker) [][]byte {
 // testFile is comprised of 100MiB of random bytes.
 var testFile = randBytes(100 * MiB)
 
-func TestSplit(t *testing.T) {
+func TestChunker_NextBytes(t *testing.T) {
 	t.Run("sum of chunks is equal original file", func(t *testing.T) {
 		const avgSize = 361 * 1024
 
@@ -51,22 +51,14 @@ func TestSplit(t *testing.T) {
 			assert.Equal(t, testFile, data)
 		})
 
-		var c *Chunker
-		var chunks [][]byte
 		t.Run("run with AE_MN", func(t *testing.T) {
-			c = NewChunker(bytes.NewReader(testFile), &Options{AverageSize: avgSize, Mode: MIN})
-			chunks = getChunks(c)
+			c := NewChunker(bytes.NewReader(testFile), &Options{AverageSize: avgSize, Mode: MIN})
+			chunks := getChunks(c)
 			var data []byte
 			for _, chunk := range chunks {
 				data = append(data, chunk...)
 			}
 			assert.Equal(t, testFile, data)
-		})
-
-		t.Run("minimum chunk size", func(t *testing.T) {
-			for _, chunk := range chunks[:len(chunks)-1] {
-				assert.GreaterOrEqual(t, len(chunk), c.MinSize())
-			}
 		})
 	})
 
@@ -124,6 +116,17 @@ func TestSplit(t *testing.T) {
 			chunks := getChunks(NewChunker(bytes.NewReader(data), &Options{AverageSize: 10, MaxSize: 100}))
 			assert.Len(t, chunks, 3)
 		})
+	})
+}
+
+func TestChunker_MinSize(t *testing.T) {
+	ch := NewChunker(bytes.NewReader(testFile), &Options{AverageSize: 264*1024+5})
+	chunks := getChunks(ch)
+	t.Run("minimum chunk size", func(t *testing.T) {
+		for _, chunk := range chunks[:len(chunks)-1] {
+			assert.GreaterOrEqual(t, len(chunk), ch.MinSize())
+		}
+		assert.Greater(t, ch.MinSize(), 0)
 	})
 }
 

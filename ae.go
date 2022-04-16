@@ -48,7 +48,7 @@ type Options struct {
 // NewChunker initializes and configures a new chunker.
 func NewChunker(reader io.Reader, opts *Options) *Chunker {
 	return &Chunker{
-		r:      	reader,
+		r:           reader,
 		Extremum:    opts.Mode,
 		AverageSize: opts.AverageSize,
 		MaxSize:     opts.MaxSize,
@@ -67,8 +67,8 @@ func (ch *Chunker) NextBytes() ([]byte, error) {
 
 	bytes := extremeValue // init new chunk
 
-	curBytes := make([]byte, ch.getWidth())
 	for i := extremePos + ch.getWidth(); true; i += ch.getWidth() {
+		curBytes := make([]byte, ch.getWidth())
 		n, err := ch.r.Read(curBytes)
 		if err != nil {
 			if err == io.EOF {
@@ -110,22 +110,6 @@ func (ch *Chunker) getWidth() int {
 		width = 1
 	}
 	return width
-}
-
-// sumBytes returns the sum of the byte sequence in data starting at position pos with a length of width.
-func (ch *Chunker) sumBytes(data []byte, pos int) int {
-	var values []byte
-	if len(data) < pos+ch.getWidth() {
-		values = data[pos:]
-	} else {
-		values = data[pos : pos+ch.getWidth()]
-	}
-
-	res := 0
-	for _, v := range values {
-		res += int(v)
-	}
-	return res
 }
 
 // isExtreme returns if the position pos in input is extreme
