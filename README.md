@@ -64,18 +64,16 @@ func main() {
 
 ## Performance
 
-In the results of a benchmark test, **ae-chunker-go** has come out as the fastest content defined chunking algorithm!
-
 The task was to divide 100 MiB of random bytes into chunks with an average size of 256 KiB
 (CPU: _Intel(R) Core(TM) i7-8750H CPU @ 2.20GHz_).
 
-| Chunking Algorithm           | Speed         |
-|------------------------------|--------------:|
-| ae-chunker-go                | 0.08159 ns/op |
-| [fastcdc-go](https://github.com/jotfs/fastcdc-go)                   | 0.09423 ns/op |
-| [go-ipfs-chunker](https://github.com/ipfs/go-ipfs-chunker) (Rabin)      | 0.43320 ns/op  |
-| [go-ipfs-chunker](https://github.com/ipfs/go-ipfs-chunker) (Buzhash)    | 0.08248 ns/op |
-| [go-ipfs-chunker](https://github.com/ipfs/go-ipfs-chunker) (Fixed Size) | 0.01966 ns/op |
+| Chunking Algorithm | Speed | Processed Bytes | Allocated Bytes | Distinct Mem. Alloc. |
+|--------------------|------:|----------------:|----------------:|---------------------:|
+| ae-chunker-go                                                         | 148 sec/op | 707.01 MB/s | 848 MB/op | 535331 allocs/op |
+| [fastcdc-go](https://github.com/jotfs/fastcdc-go)                   | 82 sec/op | 1285.59 MB/s | 2 MB/op | 3 allocs/op |
+| [go-ipfs-chunker](https://github.com/ipfs/go-ipfs-chunker) (Rabin)      | 416 sec/op  | 252.02 MB/s | 108 MB/op | 1153 allocs/op |
+| [go-ipfs-chunker](https://github.com/ipfs/go-ipfs-chunker) (Buzhash)    | 82 sec/op | 1281.50 MB/s | 107 MB/op | 415 allocs/op |
+| [go-ipfs-chunker](https://github.com/ipfs/go-ipfs-chunker) (Fixed Size) | 19 sec/op | 5502.19 MB/s | 105 MB/op | 405 allocs/op |
 
 
 ## Chunk Size Variance

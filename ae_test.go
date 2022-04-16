@@ -129,19 +129,31 @@ func TestSplit(t *testing.T) {
 
 func BenchmarkSplit(b *testing.B) {
 	b.Run("window size of 256KiB", func(b *testing.B) {
-		_ = getChunks(NewChunker(bytes.NewReader(testFile), &Options{AverageSize: 256 * 1024}))
+		for n := 0; n < b.N; n++ {
+			_ = getChunks(NewChunker(bytes.NewReader(testFile), &Options{AverageSize: 256 * 1024}))
+		}
 		b.SetBytes(int64(len(testFile)))
+		b.ReportAllocs()
 	})
 	b.Run("window size of 512KiB", func(b *testing.B) {
-		_ = getChunks(NewChunker(bytes.NewReader(testFile), &Options{AverageSize: 512 * 1024}))
+		for n := 0; n < b.N; n++ {
+			_ = getChunks(NewChunker(bytes.NewReader(testFile), &Options{AverageSize: 512 * 1024}))
+		}
 		b.SetBytes(int64(len(testFile)))
+		b.ReportAllocs()
 	})
 	b.Run("window size of 1MiB", func(b *testing.B) {
-		_ = getChunks(NewChunker(bytes.NewReader(testFile), &Options{AverageSize: 1024 * 1024}))
+		for n := 0; n < b.N; n++ {
+			_ = getChunks(NewChunker(bytes.NewReader(testFile), &Options{AverageSize: 1024 * 1024}))
+		}
 		b.SetBytes(int64(len(testFile)))
+		b.ReportAllocs()
 	})
 	b.Run("window size of 10MiB", func(b *testing.B) {
-		_ = getChunks(NewChunker(bytes.NewReader(testFile), &Options{AverageSize: 10 * 1024 * 1024}))
+		for n := 0; n < b.N; n++ {
+			_ = getChunks(NewChunker(bytes.NewReader(testFile), &Options{AverageSize: 10 * 1024 * 1024}))
+		}
 		b.SetBytes(int64(len(testFile)))
+		b.ReportAllocs()
 	})
 }
