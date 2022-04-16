@@ -120,7 +120,7 @@ func TestChunker_NextBytes(t *testing.T) {
 }
 
 func TestChunker_MinSize(t *testing.T) {
-	ch := NewChunker(bytes.NewReader(testFile), &Options{AverageSize: 264*1024+5})
+	ch := NewChunker(bytes.NewReader(testFile), &Options{AverageSize: 264*1024 + 5})
 	chunks := getChunks(ch)
 	t.Run("minimum chunk size", func(t *testing.T) {
 		for _, chunk := range chunks[:len(chunks)-1] {

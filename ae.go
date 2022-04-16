@@ -4,7 +4,6 @@ package ae
 import (
 	"io"
 	"math"
-	"math/big"
 )
 
 // Extremum defines if the algorithm should look for local minima or maxima.
@@ -112,11 +111,20 @@ func (ch *Chunker) getWidth() int {
 	return width
 }
 
+// sumBytes returns the sum of the byte sequence in data starting at position pos with a length of width.
+func sumBytes(data []byte) int {
+	res := 0
+	for _, v := range data {
+		res += int(v)
+	}
+	return res
+}
+
 // isExtreme returns if the position pos in input is extreme
 // (in the sense of the Chunker's Extremum setting) compared to the current maxPos.
 func (ch *Chunker) isExtreme(cur []byte, prev []byte) bool {
-	curVal := big.NewInt(0).SetBytes(cur).Uint64()
-	prevVal := big.NewInt(0).SetBytes(prev).Uint64()
+	curVal := sumBytes(cur)
+	prevVal := sumBytes(prev)
 
 	if ch.Extremum == MAX {
 		return curVal > prevVal
