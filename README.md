@@ -69,13 +69,13 @@ func main() {
 The task was to divide 100 MiB of random bytes into chunks with an average size of 256 KiB
 (CPU: _Intel(R) Core(TM) i7-8750H CPU @ 2.20GHz_).
 
-| Chunking Algorithm | Speed | Processed Bytes | Allocated Bytes | Distinct Mem. Alloc. |
-|--------------------|------:|----------------:|----------------:|---------------------:|
-| ae-chunker-go                                                         | 148 sec/op | 707.01 MB/s | 848 MB/op | 535331 allocs/op |
-| [fastcdc-go](https://github.com/jotfs/fastcdc-go)                   | 82 sec/op | 1285.59 MB/s | 2 MB/op | 3 allocs/op |
-| [go-ipfs-chunker](https://github.com/ipfs/go-ipfs-chunker) (Rabin)      | 416 sec/op  | 252.02 MB/s | 108 MB/op | 1153 allocs/op |
-| [go-ipfs-chunker](https://github.com/ipfs/go-ipfs-chunker) (Buzhash)    | 82 sec/op | 1281.50 MB/s | 107 MB/op | 415 allocs/op |
-| [go-ipfs-chunker](https://github.com/ipfs/go-ipfs-chunker) (Fixed Size) | 19 sec/op | 5502.19 MB/s | 105 MB/op | 405 allocs/op |
+| Chunking Algorithm                                                      |      Speed | Processed Bytes | Allocated Bytes | Distinct Mem. Alloc. |
+|-------------------------------------------------------------------------|-----------:|----------------:|----------------:|---------------------:|
+| ae-chunker-go                                                           | 148 sec/op |     707.01 MB/s |       848 MB/op |     535331 allocs/op |
+| [fastcdc-go](https://github.com/jotfs/fastcdc-go)                       |  82 sec/op |    1285.59 MB/s |         2 MB/op |          3 allocs/op |
+| [go-ipfs-chunker](https://github.com/ipfs/go-ipfs-chunker) (Rabin)      | 416 sec/op |     252.02 MB/s |       108 MB/op |       1153 allocs/op |
+| [go-ipfs-chunker](https://github.com/ipfs/go-ipfs-chunker) (Buzhash)    |  82 sec/op |    1281.50 MB/s |       107 MB/op |        415 allocs/op |
+| [go-ipfs-chunker](https://github.com/ipfs/go-ipfs-chunker) (Fixed Size) |  19 sec/op |    5502.19 MB/s |       105 MB/op |        405 allocs/op |
 
 
 ### Deduplication Efficiency
@@ -86,15 +86,18 @@ to the size of the altered data (the higher the better).
 
 For the evaluation, the uncompressed TAR archives of 20 consecutive versions of the GCC source code were used
 (a total of 12 GB). The algorithms were run configured for an average chunk size 
-of 8 KiB and a maximum chunk size of 16 KiB.
+of 8 KB and (where applicable) a maximum chunk size of 16 KB. 
+Because the Buzhash library does not support flexible chunk sizes 
+the tests were repeated with 256 KB average and 512 KB max size for better comparison.
+Generally, smaller chunk sizes make better deduplication.
 
-| Chunking Algorithm | DER |
-|--------------------|----:|
-| ae-chunker-go                                                           | 1.056510 |
-| [fastcdc-go](https://github.com/jotfs/fastcdc-go)                       | 1.000643 |
-| [go-ipfs-chunker](https://github.com/ipfs/go-ipfs-chunker) (Rabin)      | 1.354034 |
-| [go-ipfs-chunker](https://github.com/ipfs/go-ipfs-chunker) (Buzhash)    | 1.083399 |
-| [go-ipfs-chunker](https://github.com/ipfs/go-ipfs-chunker) (Fixed Size) | 1.032097 |
+| Chunking Algorithm                                                      | DER (8K/16K) | DER (256K/512K) |
+|-------------------------------------------------------------------------|-------------:|----------------:|
+| ae-chunker-go                                                           |     1.056510 |        1.002392 |
+| [fastcdc-go](https://github.com/jotfs/fastcdc-go)                       |     1.000643 |        1.000000 |
+| [go-ipfs-chunker](https://github.com/ipfs/go-ipfs-chunker) (Rabin)      |     1.354034 |        1.058422 |
+| [go-ipfs-chunker](https://github.com/ipfs/go-ipfs-chunker) (Buzhash)    |          n/a |        1.083399 |
+| [go-ipfs-chunker](https://github.com/ipfs/go-ipfs-chunker) (Fixed Size) |     1.032097 |        1.000579 |
 
 
 ### Chunk Size Variance
