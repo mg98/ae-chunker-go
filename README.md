@@ -62,7 +62,9 @@ func main() {
 }
 ```
 
-## Performance
+## Benchmarks
+
+### Performance
 
 The task was to divide 100 MiB of random bytes into chunks with an average size of 256 KiB
 (CPU: _Intel(R) Core(TM) i7-8750H CPU @ 2.20GHz_).
@@ -76,10 +78,29 @@ The task was to divide 100 MiB of random bytes into chunks with an average size 
 | [go-ipfs-chunker](https://github.com/ipfs/go-ipfs-chunker) (Fixed Size) | 19 sec/op | 5502.19 MB/s | 105 MB/op | 405 allocs/op |
 
 
-## Chunk Size Variance
+### Deduplication Efficiency
+
+This metric measures how well deduplication performs with multiple versions of a file. 
+More precisely, we define the _Deduplication Elimination Ratio (DER)_ as the ratio of the size of the input data
+to the size of the altered data (the higher the better).
+
+For the evaluation, the uncompressed TAR archives of 20 consecutive versions of the GCC source code were used
+(a total of 12 GB). The algorithms were run configured for an average chunk size 
+of 8 KiB and a maximum chunk size of 16 KiB.
+
+| Chunking Algorithm | DER |
+|--------------------|----:|
+| ae-chunker-go                                                           | 1.056510 |
+| [fastcdc-go](https://github.com/jotfs/fastcdc-go)                       | 1.000643 |
+| [go-ipfs-chunker](https://github.com/ipfs/go-ipfs-chunker) (Rabin)      | 1.354034 |
+| [go-ipfs-chunker](https://github.com/ipfs/go-ipfs-chunker) (Buzhash)    | 1.083399 |
+| [go-ipfs-chunker](https://github.com/ipfs/go-ipfs-chunker) (Fixed Size) | 1.032097 |
+
+
+### Chunk Size Variance
 
 The following plots show the chunk size distribution on a set of random bytes of 1 GiB.
-The algorithm was run with the options 
+The algorithm was run with the options
 `&ae.Options{AverageSize: 256*1024}` and `&ae.Options{AverageSize: 256*1024, MaxSize: 512*1024}`,
 respectively.
 
