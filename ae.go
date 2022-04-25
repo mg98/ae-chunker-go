@@ -22,14 +22,20 @@ type Chunker struct {
 	// r reads the data to be chunked.
 	r io.Reader
 
-	// AverageSize of a chunk in bytes as is desired.
-	AverageSize int
+	// avgSize is the desired average size in bytes for a single chunk.
+	avgSize int
 
-	// Extremum to be considered in the algorithm (optional).
-	Extremum Extremum
+	// extremum to be considered in the algorithm (optional).
+	extremum Extremum
 
-	// MaxSize of a single chunk (cf. AE_MAX_T and AE_MIN_T) (optional).
-	MaxSize int
+	// maxSize of a single chunk (cf. AE_MAX_T and AE_MIN_T) (optional).
+	maxSize int
+
+	// curBytes is used as an internal buffer during iterations of NextBytes.
+	curBytes []byte
+
+	// chunk is the bytes of the current chunk used as an internal buffer during iterations of NextBytes.
+	chunk []byte
 }
 
 // Options configure the parameters for the Chunker.
@@ -46,12 +52,25 @@ type Options struct {
 
 // NewChunker initializes and configures a new chunker.
 func NewChunker(reader io.Reader, opts *Options) *Chunker {
-	return &Chunker{
-		r:           reader,
-		Extremum:    opts.Mode,
-		AverageSize: opts.AverageSize,
-		MaxSize:     opts.MaxSize,
+	mode := MAX
+	avgSize := 256 * 1024 * 1024
+	maxSize := avgSize * 2
+	if opts != nil {
+		mode = opts.Mode
+		avgSize = opts.AverageSize
+		maxSize = opts.MaxSize
 	}
+
+	ch := &Chunker{
+		r:        reader,
+		extremum: mode,
+		avgSize:  avgSize,
+		maxSize:  maxSize,
+	}
+	ch.curBytes = make([]byte, ch.getWidth())
+	ch.chunk = make([]byte, ch.maxSize)
+
+	return ch
 }
 
 // NextBytes returns the next chunk of bytes or the error io.EOF if there is none.
@@ -60,36 +79,41 @@ func (ch *Chunker) NextBytes() ([]byte, error) {
 	// first `width` bytes become initial extreme value
 	extremePos := ch.getWidth()
 	extremeValue := make([]byte, ch.getWidth())
-	if _, err := ch.r.Read(extremeValue); err != nil {
+	if n, err := ch.r.Read(extremeValue); err != nil || n < ch.getWidth() {
+		if n > 0 {
+			return extremeValue[:n], err
+		}
 		return nil, err
 	}
 
-	bytes := extremeValue // init new chunk
+	ch.chunk = extremeValue // init new chunk
 
-	for i := extremePos + ch.getWidth(); true; i += ch.getWidth() {
-		curBytes := make([]byte, ch.getWidth())
-		n, err := ch.r.Read(curBytes)
-		if err != nil {
-			if err == io.EOF {
-				break
+	var n int
+	var err error
+	for i := extremePos + ch.getWidth(); err != io.EOF; i += ch.getWidth() {
+		n, err = ch.r.Read(ch.curBytes)
+		if n <= 0 {
+			if err != nil && err != io.EOF {
+				return nil, err
 			}
-			return nil, err
-		}
-
-		bytes = append(bytes, curBytes[:n]...)
-
-		if ch.MaxSize > 0 && i >= ch.MaxSize {
 			break
 		}
-		if ch.isExtreme(curBytes, extremeValue) {
+
+		ch.curBytes = ch.curBytes[:n]
+		ch.chunk = append(ch.chunk, ch.curBytes...)
+
+		if ch.maxSize > 0 && i >= ch.maxSize {
+			break
+		}
+		if ch.isExtreme(ch.curBytes, extremeValue) {
 			extremePos = i
-			extremeValue = curBytes
+			copy(extremeValue, ch.curBytes)
 		} else if i >= extremePos+ch.getWindowSize() {
 			break
 		}
 	}
 
-	return bytes, nil
+	return ch.chunk, nil
 }
 
 // MinSize returns the theoretical minimum size a chunk can have.
@@ -97,9 +121,9 @@ func (ch *Chunker) MinSize() int {
 	return ch.getWindowSize() + ch.getWidth()
 }
 
-// getWindowSize returns the window size based on the desired AverageSize.
+// getWindowSize returns the window size based on the desired avgSize.
 func (ch *Chunker) getWindowSize() int {
-	return int(math.Round(float64(ch.AverageSize) / (math.E - 1)))
+	return int(math.Round(float64(ch.avgSize) / (math.E - 1)))
 }
 
 // getWidth returns the width of the byte sequence the algorithm should use based on the required window size.
@@ -111,6 +135,19 @@ func (ch *Chunker) getWidth() int {
 	return width
 }
 
+// isExtreme returns if the position pos in input is extreme
+// (in the sense of the Chunker's Extremum setting) compared to the current maxPos.
+func (ch *Chunker) isExtreme(cur []byte, prev []byte) bool {
+	curVal := sumBytes(cur)
+	prevVal := sumBytes(prev)
+
+	if ch.extremum == MAX {
+		return curVal > prevVal
+	} else {
+		return curVal < prevVal
+	}
+}
+
 // sumBytes returns the sum of the byte sequence in data starting at position pos with a length of width.
 func sumBytes(data []byte) int {
 	res := 0
@@ -118,17 +155,4 @@ func sumBytes(data []byte) int {
 		res += int(v)
 	}
 	return res
-}
-
-// isExtreme returns if the position pos in input is extreme
-// (in the sense of the Chunker's Extremum setting) compared to the current maxPos.
-func (ch *Chunker) isExtreme(cur []byte, prev []byte) bool {
-	curVal := sumBytes(cur)
-	prevVal := sumBytes(prev)
-
-	if ch.Extremum == MAX {
-		return curVal > prevVal
-	} else {
-		return curVal < prevVal
-	}
 }

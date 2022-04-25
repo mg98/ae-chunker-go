@@ -71,12 +71,11 @@ The task was to divide 100 MiB of random bytes into chunks with an average size 
 
 | Chunking Algorithm                                                      |      Speed | Processed Bytes | Allocated Bytes | Distinct Mem. Alloc. |
 |-------------------------------------------------------------------------|-----------:|----------------:|----------------:|---------------------:|
-| ae-chunker-go                                                           | 148 sec/op |     707.01 MB/s |       848 MB/op |     535331 allocs/op |
-| [fastcdc-go](https://github.com/jotfs/fastcdc-go)                       |  82 sec/op |    1285.59 MB/s |         2 MB/op |          3 allocs/op |
-| [go-ipfs-chunker](https://github.com/ipfs/go-ipfs-chunker) (Rabin)      | 416 sec/op |     252.02 MB/s |       108 MB/op |       1153 allocs/op |
-| [go-ipfs-chunker](https://github.com/ipfs/go-ipfs-chunker) (Buzhash)    |  82 sec/op |    1281.50 MB/s |       107 MB/op |        415 allocs/op |
-| [go-ipfs-chunker](https://github.com/ipfs/go-ipfs-chunker) (Fixed Size) |  19 sec/op |    5502.19 MB/s |       105 MB/op |        405 allocs/op |
-
+| ae-chunker-go                                                           | 168 sec/op |     622.94 MB/s |    507.27 MB/op |       7769 allocs/op |
+| [fastcdc-go](https://github.com/jotfs/fastcdc-go)                       |  88 sec/op |    1194.74 MB/s |      2.10 MB/op |          3 allocs/op |
+| [go-ipfs-chunker](https://github.com/ipfs/go-ipfs-chunker) (Rabin)      | 414 sec/op |     253.54 MB/s |    108.83 MB/op |       1192 allocs/op |
+| [go-ipfs-chunker](https://github.com/ipfs/go-ipfs-chunker) (Buzhash)    |  81 sec/op |    1288.27 MB/s |    106.48 MB/op |        406 allocs/op |
+| [go-ipfs-chunker](https://github.com/ipfs/go-ipfs-chunker) (Fixed Size) |  22 sec/op |    4773.13 MB/s |    104.87 MB/op |        405 allocs/op |
 
 ### Deduplication Efficiency
 
