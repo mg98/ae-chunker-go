@@ -85,12 +85,12 @@ func (ch *Chunker) NextBytes() ([]byte, error) {
 		}
 		return nil, err
 	}
-
 	ch.chunk = extremeValue // init new chunk
 
 	var n int
 	var err error
 	for i := extremePos + ch.getWidth(); err != io.EOF; i += ch.getWidth() {
+		// get current position's value
 		n, err = ch.r.Read(ch.curBytes)
 		if n <= 0 {
 			if err != nil && err != io.EOF {
@@ -98,17 +98,22 @@ func (ch *Chunker) NextBytes() ([]byte, error) {
 			}
 			break
 		}
-
 		ch.curBytes = ch.curBytes[:n]
+
+		// append current value to chunk
 		ch.chunk = append(ch.chunk, ch.curBytes...)
 
+		// break if chunk is already getting too large
 		if ch.maxSize > 0 && i >= ch.maxSize {
 			break
 		}
+
 		if ch.isExtreme(ch.curBytes, extremeValue) {
+			// new extreme value encountered
 			extremePos = i
 			copy(extremeValue, ch.curBytes)
 		} else if i >= extremePos+ch.getWindowSize() {
+			// end of sliding window reached
 			break
 		}
 	}
@@ -135,8 +140,7 @@ func (ch *Chunker) getWidth() int {
 	return width
 }
 
-// isExtreme returns if the position pos in input is extreme
-// (in the sense of the Chunker's Extremum setting) compared to the current maxPos.
+// isExtreme checks whether cur is extreme compared to prev.
 func (ch *Chunker) isExtreme(cur []byte, prev []byte) bool {
 	curVal := sumBytes(cur)
 	prevVal := sumBytes(prev)
