@@ -28,8 +28,17 @@ type Chunker struct {
 	// extremum to be considered in the algorithm (optional).
 	extremum Extremum
 
+	// windowSize is computed from avgSize.
+	windowSize int
+
+	// minSize is a computed minimum size for a single chunk.
+	minSize int
+
 	// maxSize of a single chunk (cf. AE_MAX_T and AE_MIN_T) (optional).
 	maxSize int
+
+	// width of byte sequence the algorithm should use based on the required window size.
+	width int
 
 	// curBytes is used as an internal buffer during iterations of NextBytes.
 	curBytes []byte
@@ -60,14 +69,22 @@ func NewChunker(reader io.Reader, opts *Options) *Chunker {
 		avgSize = opts.AverageSize
 		maxSize = opts.MaxSize
 	}
+	windowSize := int(math.Round(float64(avgSize) / (math.E - 1)))
+	width := int(math.Round(float64(windowSize / 256)))
+	if width == 0 {
+		width = 1
+	}
 
 	ch := &Chunker{
-		r:        reader,
-		extremum: mode,
-		avgSize:  avgSize,
-		maxSize:  maxSize,
+		r:          reader,
+		extremum:   mode,
+		avgSize:    avgSize,
+		windowSize: windowSize,
+		minSize:    avgSize - windowSize,
+		maxSize:    maxSize,
+		width:      width,
 	}
-	ch.curBytes = make([]byte, ch.getWidth())
+	ch.curBytes = make([]byte, width)
 	ch.chunk = make([]byte, ch.maxSize)
 
 	return ch
@@ -77,9 +94,9 @@ func NewChunker(reader io.Reader, opts *Options) *Chunker {
 // Call this function in a for loop to attain all chunks of a data stream.
 func (ch *Chunker) NextBytes() ([]byte, error) {
 	// first `width` bytes become initial extreme value
-	extremePos := ch.getWidth()
-	extremeValue := make([]byte, ch.getWidth())
-	if n, err := ch.r.Read(extremeValue); err != nil || n < ch.getWidth() {
+	extremePos := ch.width
+	extremeValue := make([]byte, ch.width)
+	if n, err := ch.r.Read(extremeValue); err != nil || n < ch.width {
 		if n > 0 {
 			return extremeValue[:n], err
 		}
@@ -89,7 +106,7 @@ func (ch *Chunker) NextBytes() ([]byte, error) {
 
 	var n int
 	var err error
-	for i := extremePos + ch.getWidth(); err != io.EOF; i += ch.getWidth() {
+	for i := extremePos + ch.width; err != io.EOF; i += ch.width {
 		// get current position's value
 		n, err = ch.r.Read(ch.curBytes)
 		if n <= 0 {
@@ -112,32 +129,13 @@ func (ch *Chunker) NextBytes() ([]byte, error) {
 			// new extreme value encountered
 			extremePos = i
 			copy(extremeValue, ch.curBytes)
-		} else if i >= extremePos+ch.getWindowSize() {
+		} else if i >= extremePos+ch.windowSize {
 			// end of sliding window reached
 			break
 		}
 	}
 
 	return ch.chunk, nil
-}
-
-// MinSize returns the theoretical minimum size a chunk can have.
-func (ch *Chunker) MinSize() int {
-	return ch.getWindowSize() + ch.getWidth()
-}
-
-// getWindowSize returns the window size based on the desired avgSize.
-func (ch *Chunker) getWindowSize() int {
-	return int(math.Round(float64(ch.avgSize) / (math.E - 1)))
-}
-
-// getWidth returns the width of the byte sequence the algorithm should use based on the required window size.
-func (ch *Chunker) getWidth() int {
-	width := int(math.Round(float64(ch.getWindowSize() / 256)))
-	if width == 0 {
-		width = 1
-	}
-	return width
 }
 
 // isExtreme checks whether cur is extreme compared to prev.

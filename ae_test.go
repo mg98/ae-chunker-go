@@ -124,9 +124,9 @@ func TestChunker_MinSize(t *testing.T) {
 	chunks := getChunks(ch)
 	t.Run("minimum chunk size", func(t *testing.T) {
 		for _, chunk := range chunks[:len(chunks)-1] {
-			assert.GreaterOrEqual(t, len(chunk), ch.MinSize())
+			assert.GreaterOrEqual(t, len(chunk), ch.minSize)
 		}
-		assert.Greater(t, ch.MinSize(), 0)
+		assert.Greater(t, ch.minSize, 0)
 	})
 }
 
