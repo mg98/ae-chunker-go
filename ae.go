@@ -2,6 +2,7 @@
 package ae
 
 import (
+	"io"
 	"math"
 )
 
@@ -29,8 +30,8 @@ type Options struct {
 }
 
 type Chunker struct {
-	// input to be chunked.
-	input []byte
+	// reader to be chunked.
+	reader io.Reader
 
 	// avgSize is the desired average size in bytes for a single chunk.
 	avgSize int
@@ -47,43 +48,52 @@ type Chunker struct {
 	// maxSize of a single chunk (cf. AE_MAX_T and AE_MIN_T) (optional).
 	maxSize int
 
-	bytesProcessed int
-	bytesRemaining int
+	overflow []byte
 }
 
-func NewChunker(input []byte, opts *Options) *Chunker {
+func NewChunker(r io.Reader, opts *Options) *Chunker {
 	mode := MAX
 	avgSize := 256 * 1024 * 1024
-	maxSize := avgSize * 2
+	var maxSize int
 	if opts != nil {
 		mode = opts.Mode
-		avgSize = opts.AverageSize
-		maxSize = opts.MaxSize
+		if opts.AverageSize > 0 {
+			avgSize = opts.AverageSize
+		}
+		if opts.MaxSize > 0 {
+			maxSize = opts.MaxSize
+		} else {
+			maxSize = avgSize * 2
+		}
 	}
 	windowSize := int(math.Round(float64(avgSize) / (math.E - 1)))
 
 	ch := &Chunker{
-		input:          input,
-		extremum:       mode,
-		avgSize:        avgSize,
-		windowSize:     windowSize,
-		minSize:        avgSize - windowSize,
-		maxSize:        maxSize,
-		bytesProcessed: 0,
-		bytesRemaining: len(input),
+		reader:     r,
+		extremum:   mode,
+		avgSize:    avgSize,
+		windowSize: windowSize,
+		minSize:    avgSize - windowSize,
+		maxSize:    maxSize,
+		overflow:   make([]byte, 0),
 	}
 
 	return ch
 }
 
 func (ch *Chunker) NextChunk() []byte {
-	if ch.bytesRemaining == 0 {
+
+	nextBytes := make([]byte, ch.maxSize-len(ch.overflow))
+	n, err := ch.reader.Read(nextBytes)
+	if err != nil && err != io.EOF {
+		panic(err)
+	}
+	subject := append(ch.overflow, nextBytes[:n]...)
+	if len(subject) == 0 {
 		return nil
 	}
-
-	nextSlice := ch.nextChunkedSlice(ch.input[ch.bytesProcessed:])
-	ch.bytesProcessed += len(nextSlice)
-	ch.bytesRemaining -= len(nextSlice)
+	nextSlice := ch.nextChunkedSlice(subject)
+	ch.overflow = subject[len(nextSlice):]
 
 	return nextSlice
 }
@@ -107,11 +117,7 @@ func (ch *Chunker) nextChunkedSlice(input []byte) []byte {
 		}
 	}
 
-	if ch.maxSize < ch.bytesRemaining {
-		return input[:ch.maxSize]
-	} else {
-		return input
-	}
+	return input
 }
 
 func (ch *Chunker) isExtreme(cur byte, prev byte) bool {
