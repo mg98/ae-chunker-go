@@ -5,7 +5,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"math"
 	"math/rand"
-	"os"
 	"testing"
 	"time"
 )
@@ -70,23 +69,6 @@ func TestChunker_NextBytes(t *testing.T) {
 				data = append(data, chunk...)
 			}
 			assert.Equal(t, testFile, data)
-		})
-
-		t.Run("run with big test file", func(t *testing.T) {
-			b, err := os.ReadFile("markus.jpeg")
-			if err != nil {
-				panic(err)
-			}
-			const avgSize = 100 * 1024
-			r := bytes.NewReader(b)
-			c := NewChunker(r, &Options{AverageSize: avgSize, MaxSize: 2 * avgSize})
-			chunks := getChunks(c)
-			var data []byte
-			for _, chunk := range chunks {
-				data = append(data, chunk...)
-			}
-			os.WriteFile("markus-ae.jpeg", data, 0644)
-			assert.Equal(t, b, data)
 		})
 	})
 
